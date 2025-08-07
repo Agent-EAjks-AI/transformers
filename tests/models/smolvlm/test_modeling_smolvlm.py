@@ -611,7 +611,7 @@ class SmolVLMForConditionalGenerationIntegrationTest(unittest.TestCase):
         # Load model and extract vision encoder
         model = SmolVLMForConditionalGeneration.from_pretrained(
             model_id,
-            torch_dtype=torch.float32,
+            dtype=torch.float32,
             config=config,
         )
 
@@ -634,7 +634,7 @@ class SmolVLMForConditionalGenerationIntegrationTest(unittest.TestCase):
         # Load the model and extract the connector (multi-modal projector)
         model = SmolVLMForConditionalGeneration.from_pretrained(
             model_id,
-            torch_dtype=torch.float32,
+            dtype=torch.float32,
             config=config,
         )
 
@@ -662,7 +662,7 @@ class SmolVLMForConditionalGenerationIntegrationTest(unittest.TestCase):
         # Load the model and extract the text decoder
         model = SmolVLMForConditionalGeneration.from_pretrained(
             model_id,
-            torch_dtype=torch.float32,
+            dtype=torch.float32,
             config=config,
         )
 

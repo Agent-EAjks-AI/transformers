@@ -120,7 +120,7 @@ jobs:
 
       - name: Run all tests on GPU
         working-directory: /transformers
-        run: python3 -m pytest -rsfE -v --make-reports=${{ env.machine_type }}_${{ inputs.report_name_prefix }}_${{ matrix.folders }}_test_reports -m torch_compile_test tests/models/
+        run: python3 -m pytest -rsfE -v --make-reports=${{ env.machine_type }}_${{ inputs.report_name_prefix }}_${{ matrix.folders }}_test_reports -m torch_export_test tests/models/
 
       - name: Failure short reports
         if: ${{ failure() }}

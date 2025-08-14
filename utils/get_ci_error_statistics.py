@@ -21,6 +21,9 @@ def get_jobs(workflow_run_id, token=None):
     result = requests.get(url, headers=headers).json()
     jobs = []
 
+    print(url)
+    print(result)
+
     try:
         jobs.extend(result["jobs"])
         pages_to_iterate_over = math.ceil((result["total_count"] - 100) / 100)

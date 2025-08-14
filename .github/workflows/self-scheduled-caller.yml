@@ -7,7 +7,7 @@ on:
     - cron: "17 2 * * *"
   push:
     branches:
-      - fix_nightly_ci
+      - run_scheduled_ci*
   workflow_dispatch:
     inputs:
       prev_workflow_run_id:

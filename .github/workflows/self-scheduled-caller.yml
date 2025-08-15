@@ -4,7 +4,7 @@ name: Self-hosted runner (scheduled)
 on:
   repository_dispatch:
   schedule:
-    - cron: "17 2 * * *"
+    - cron: "17 18 * * *"
   push:
     branches:
       - run_scheduled_ci*

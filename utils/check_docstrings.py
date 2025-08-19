@@ -604,6 +604,9 @@ OBJECTS_TO_IGNORE = [
     "ZeroShotImageClassificationPipeline",
     "ZeroShotObjectDetectionPipeline",
     "Llama4TextConfig",
+    "BltConfig",
+    "BltPatcherConfig",
+    "BltTokenizer",
 ]
 
 # Supported math operations when interpreting the value of defaults.

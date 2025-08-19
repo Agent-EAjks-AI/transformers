@@ -1312,6 +1312,7 @@ if __name__ == "__main__":
     )
     workflow_run_created_time = workflow_run["created_at"]
     workflow_id = workflow_run["workflow_id"]
+    print(workflow_id)
 
     report_repo_folder = workflow_run_created_time.split("T")[0]
 
@@ -1481,10 +1482,15 @@ if __name__ == "__main__":
     prev_workflow_run_id = None
     other_workflow_run_ids = []
 
+    print(is_scheduled_ci_run)
+    print(is_nvidia_daily_ci_workflow)
+
     if is_scheduled_ci_run:
         prev_workflow_run_id = get_last_daily_ci_workflow_run_id(
             token=os.environ["ACCESS_REPO_INFO_TOKEN"], workflow_id=workflow_id
         )
+        print(workflow_id)
+        print(prev_workflow_run_id)
         # For a scheduled run that is not the Nvidia's scheduled daily CI, add Nvidia's scheduled daily CI run as a target to compare.
         if not is_nvidia_daily_ci_workflow:
             # The id of the workflow `.github/workflows/self-scheduled-caller.yml` (not of a workflow run of it).
@@ -1493,11 +1499,15 @@ if __name__ == "__main__":
             other_workflow_run_id = get_last_daily_ci_workflow_run_id(
                 token=os.environ["ACCESS_REPO_INFO_TOKEN"], workflow_id=other_workflow_id, commit_sha=os.environ.get("CI_SHA_2")
             )
+            print(other_workflow_run_id)
             other_workflow_run_ids.append(other_workflow_run_id)
     else:
         prev_workflow_run_id = os.environ["PREV_WORKFLOW_RUN_ID"]
         other_workflow_run_id = os.environ["OTHER_WORKFLOW_RUN_ID"]
         other_workflow_run_ids.append(other_workflow_run_id)
+
+    print(other_workflow_run_ids)
+    print(other_workflow_run_ids)
 
     prev_ci_artifacts = (None, None)
     other_ci_artifacts = []

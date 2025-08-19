@@ -11,7 +11,7 @@ on:
     types: [completed]
   push:
     branches:
-      - fix_nightly_ci
+      - run_nightly_ci*
 
 jobs:
   build_nightly_ci_images:
@@ -21,7 +21,7 @@ jobs:
 
   model-ci:
     name: Model CI
-    # needs: [build_nightly_ci_images]
+    needs: [build_nightly_ci_images]
     uses: ./.github/workflows/self-scheduled.yml
     with:
       job: run_models_gpu

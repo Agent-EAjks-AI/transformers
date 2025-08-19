@@ -3,11 +3,15 @@ name: Self-hosted runner (nightly-ci)
 
 on:
   repository_dispatch:
-  schedule:
-    - cron: "17 2 * * *"
+  # triggered when the daily scheduled Nvidia CI is completed.
+  # This way, we can compare the results more easily.
+  workflow_run:
+    workflows: ["Self-hosted runner (scheduled)"]
+    branches: ["fix_nightly_ci"]
+    types: [completed]
   push:
     branches:
-      - fix_nightly_ci
+      - fix_nightly_ci333
 
 jobs:
 #  build_nightly_ci_images:

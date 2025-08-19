@@ -4,10 +4,10 @@ name: Self-hosted runner (scheduled)
 on:
   repository_dispatch:
   schedule:
-    - cron: "17 18 * * *"
+    - cron: "17 2 * * *"
   push:
     branches:
-      - fix_nightly_ci
+      - run_scheduled_ci*
   workflow_dispatch:
     inputs:
       prev_workflow_run_id:
@@ -25,16 +25,8 @@ on:
 # Used for `push` to easily modify the target workflow runs to compare against
 env:
     prev_workflow_run_id: ""
-    other_workflow_run_id: "16981748931"
+    other_workflow_run_id: ""
 
-#jobs:
-#  setup:
-#    name: Setup
-#    runs-on: ubuntu-22.04
-#    steps:
-#      - name: Setup
-#        run: |
-#          echo "Hello"
 
 jobs:
   setup:

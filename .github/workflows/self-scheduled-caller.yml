@@ -7,7 +7,7 @@ on:
     - cron: "17 2 * * *"
   push:
     branches:
-      - run_scheduled_ci*
+      - fix_nightly_ci
   workflow_dispatch:
     inputs:
       prev_workflow_run_id:
@@ -25,7 +25,7 @@ on:
 # Used for `push` to easily modify the target workflow runs to compare against
 env:
     prev_workflow_run_id: ""
-    other_workflow_run_id: ""
+    other_workflow_run_id: "16981748931"
 
 
 jobs:

@@ -1416,6 +1416,8 @@ if __name__ == "__main__":
             if "workflow_run" in event_payload:
                 is_scheduled_ci_run = event_payload["workflow_run"]["event"] == "schedule"
 
+    is_scheduled_ci_run = True
+
     test_name_and_result_pairs = []
     if len(matrix_job_results) > 0:
         test_name = job_to_test_map[job_name]

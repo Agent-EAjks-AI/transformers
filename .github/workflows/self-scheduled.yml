@@ -1,4 +1,4 @@
-name: Self-hosted runner (scheduled)
+name: Nvidia CI (job definitions)
 
 # Note that each job's dependencies go into a corresponding docker file.
 #

@@ -1491,7 +1491,7 @@ if __name__ == "__main__":
             other_workflow_id = "90575235"
             # We need to get the Nvidia's scheduled daily CI run that match the current run (i.e. run with the same commit SHA)
             other_workflow_run_id = get_last_daily_ci_workflow_run_id(
-                token=os.environ["ACCESS_REPO_INFO_TOKEN"], workflow_id=other_workflow_id, commit_sha=ci_sha
+                token=os.environ["ACCESS_REPO_INFO_TOKEN"], workflow_id=other_workflow_id, commit_sha=os.environ.get("CI_SHA_2")
             )
             other_workflow_run_ids.append(other_workflow_run_id)
     else:

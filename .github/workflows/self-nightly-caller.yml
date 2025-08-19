@@ -14,14 +14,14 @@ on:
       - fix_nightly_ci
 
 jobs:
-  build_nightly_ci_images:
-    name: Build CI Docker Images with nightly torch
-    uses: ./.github/workflows/build-nightly-ci-docker-images.yml
-    secrets: inherit
+#  build_nightly_ci_images:
+#    name: Build CI Docker Images with nightly torch
+#    uses: ./.github/workflows/build-nightly-ci-docker-images.yml
+#    secrets: inherit
 
   model-ci:
     name: Model CI
-    needs: [build_nightly_ci_images]
+#    needs: [build_nightly_ci_images]
     uses: ./.github/workflows/self-scheduled.yml
     with:
       job: run_models_gpu

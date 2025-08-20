@@ -1416,6 +1416,8 @@ if __name__ == "__main__":
             if "workflow_run" in event_payload:
                 is_scheduled_ci_run = event_payload["workflow_run"]["event"] == "schedule"
 
+    is_scheduled_ci_run = True
+
     test_name_and_result_pairs = []
     if len(matrix_job_results) > 0:
         test_name = job_to_test_map[job_name]
@@ -1489,7 +1491,7 @@ if __name__ == "__main__":
             other_workflow_id = "90575235"
             # We need to get the Nvidia's scheduled daily CI run that match the current run (i.e. run with the same commit SHA)
             other_workflow_run_id = get_last_daily_ci_workflow_run_id(
-                token=os.environ["ACCESS_REPO_INFO_TOKEN"], workflow_id=other_workflow_id, commit_sha=ci_sha
+                token=os.environ["ACCESS_REPO_INFO_TOKEN"], workflow_id=other_workflow_id, commit_sha="6b5bd117231f969713ed79fd4870903ab3c93edf"
             )
             other_workflow_run_ids.append(other_workflow_run_id)
     else:

@@ -69,9 +69,9 @@ jobs:
                 .map(file => file.filename);
             }
             
-            // Filter files that match the pattern src/transformers/models/**
-            const modelFiles = files.filter(file => 
-              file.startsWith('src/transformers/models/')
+            // Include all files under src/transformers/ (not just models subdirectory)
+            const transformersFiles = files.filter(file => 
+              file.startsWith('src/transformers/')
             );
             
             core.setOutput('changed_files', modelFiles.join(' '));

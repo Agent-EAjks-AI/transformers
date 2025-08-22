@@ -838,6 +838,9 @@ class BertForPreTrainingOutput(ModelOutput):
     `add_cross_attention` set to `True`; an `encoder_hidden_states` is then expected as an input to the forward pass.
     """
 )
+
+a = 3
+
 class BertModel(BertPreTrainedModel):
     _no_split_modules = ["BertEmbeddings", "BertLayer"]
 

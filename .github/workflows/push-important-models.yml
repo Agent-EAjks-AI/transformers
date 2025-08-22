@@ -32,48 +32,41 @@ jobs:
           script: |
             let files = [];
             
-            // Check if this is a pull request event
-            if (context.eventName === 'pull_request') {
-              const { data: prFiles } = await github.rest.pulls.listFiles({
+            // Only handle push events
+            if (context.eventName === 'push') {
+              const afterSha = context.payload.after;
+              const branchName = context.payload.ref.replace('refs/heads/', '');
+              
+              let baseSha;
+              
+              if (branchName === 'main') {
+                console.log('Push to main branch, comparing to parent commit');
+                // Get the parent commit of the pushed commit
+                const { data: commit } = await github.rest.repos.getCommit({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: afterSha
+                });
+                baseSha = commit.parents[0]?.sha;
+                if (!baseSha) {
+                  throw new Error('No parent commit found for the pushed commit');
+                }
+              } else {
+                console.log(`Push to branch ${branchName}, comparing to main`);
+                baseSha = 'main';
+              }
+              
+              const { data: comparison } = await github.rest.repos.compareCommits({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                pull_number: context.payload.pull_request.number
+                base: baseSha,
+                head: afterSha
               });
+              
               // Include added, modified, and renamed files
-              files = prFiles
+              files = comparison.files
                 .filter(file => file.status === 'added' || file.status === 'modified' || file.status === 'renamed')
                 .map(file => file.filename);
-            } 
-            // Handle push events (including merges to main)
-            else if (context.eventName === 'push') {
-              const beforeSha = context.payload.before;
-              const afterSha = context.payload.after;
-              
-              // Check if before SHA is all zeros (new branch or force push)
-              if (beforeSha === '0000000000000000000000000000000000000000') {
-                console.log('New branch or force push detected, comparing against main branch');
-                // Compare against main branch instead
-                const { data: comparison } = await github.rest.repos.compareCommits({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  base: 'main',
-                  head: afterSha
-                });
-                files = comparison.files
-                  .filter(file => file.status === 'added' || file.status === 'modified' || file.status === 'renamed')
-                  .map(file => file.filename);
-              } else {
-                // Normal case: compare before and after
-                const { data: comparison } = await github.rest.repos.compareCommits({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  base: 'main',
-                  head: afterSha
-                });
-                files = comparison.files
-                  .filter(file => file.status === 'added' || file.status === 'modified' || file.status === 'renamed')
-                  .map(file => file.filename);
-              }
             }
             
             // Filter files that match the pattern src/transformers/models/**

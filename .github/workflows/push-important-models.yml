@@ -67,7 +67,7 @@ jobs:
                 const { data: comparison } = await github.rest.repos.compareCommits({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  base: beforeSha,
+                  base: 'main',
                   head: afterSha
                 });
                 files = comparison.files

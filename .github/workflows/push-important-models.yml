@@ -32,11 +32,23 @@ jobs:
           script: |
             let files = [];
             
+            // Check if this is a pull request event
+            if (context.eventName === 'pull_request') {
+              const { data: prFiles } = await github.rest.pulls.listFiles({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number
+              });
+              // Include added, modified, and renamed files
+              files = prFiles
+                .filter(file => file.status === 'added' || file.status === 'modified' || file.status === 'renamed')
+                .map(file => file.filename);
+            } 
             // Handle push events (including merges to main)
-            if (context.eventName === 'push') {
+            else if (context.eventName === 'push') {
               const beforeSha = context.payload.before;
               const afterSha = context.payload.after;
-
+              
               // Check if before SHA is all zeros (new branch or force push)
               if (beforeSha === '0000000000000000000000000000000000000000') {
                 console.log('New branch or force push detected, comparing against main branch');
@@ -58,11 +70,10 @@ jobs:
                   base: beforeSha,
                   head: afterSha
                 });
-
-              // Include added, modified, and renamed files
-              files = comparison.files
-                .filter(file => file.status === 'added' || file.status === 'modified' || file.status === 'renamed')
-                .map(file => file.filename);
+                files = comparison.files
+                  .filter(file => file.status === 'added' || file.status === 'modified' || file.status === 'renamed')
+                  .map(file => file.filename);
+              }
             }
             
             // Filter files that match the pattern src/transformers/models/**

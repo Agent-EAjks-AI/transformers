@@ -70,12 +70,12 @@ jobs:
             }
             
             // Include all files under src/transformers/ (not just models subdirectory)
-            const transformersFiles = files.filter(file => 
+            const filteredFiles = files.filter(file => 
               file.startsWith('src/transformers/')
             );
             
-            core.setOutput('changed_files', modelFiles.join(' '));
-            core.setOutput('any_changed', modelFiles.length > 0 ? 'true' : 'false');
+            core.setOutput('changed_files', filteredFiles.join(' '));
+            core.setOutput('any_changed', filteredFiles.length > 0 ? 'true' : 'false');
 
       - name: Parse changed files with Python
         if: steps.get-changed-files.outputs.any_changed == 'true'

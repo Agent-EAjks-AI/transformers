@@ -34,12 +34,31 @@ jobs:
             
             // Handle push events (including merges to main)
             if (context.eventName === 'push') {
-              const { data: comparison } = await github.rest.repos.compareCommits({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                base: context.payload.before,
-                head: context.payload.after
-              });
+              const beforeSha = context.payload.before;
+              const afterSha = context.payload.after;
+
+              // Check if before SHA is all zeros (new branch or force push)
+              if (beforeSha === '0000000000000000000000000000000000000000') {
+                console.log('New branch or force push detected, comparing against main branch');
+                // Compare against main branch instead
+                const { data: comparison } = await github.rest.repos.compareCommits({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  base: 'main',
+                  head: afterSha
+                });
+                files = comparison.files
+                  .filter(file => file.status === 'added' || file.status === 'modified' || file.status === 'renamed')
+                  .map(file => file.filename);
+              } else {
+                // Normal case: compare before and after
+                const { data: comparison } = await github.rest.repos.compareCommits({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  base: beforeSha,
+                  head: afterSha
+                });
+
               // Include added, modified, and renamed files
               files = comparison.files
                 .filter(file => file.status === 'added' || file.status === 'modified' || file.status === 'renamed')

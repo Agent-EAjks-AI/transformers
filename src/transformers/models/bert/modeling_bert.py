@@ -839,7 +839,6 @@ class BertForPreTrainingOutput(ModelOutput):
     """
 )
 
-a = 3
 
 class BertModel(BertPreTrainedModel):
     _no_split_modules = ["BertEmbeddings", "BertLayer"]
@@ -864,6 +863,8 @@ class BertModel(BertPreTrainedModel):
         self.post_init()
 
     def get_input_embeddings(self):
+        a = 3
+
         return self.embeddings.word_embeddings
 
     def set_input_embeddings(self, value):

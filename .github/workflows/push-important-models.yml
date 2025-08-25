@@ -165,6 +165,7 @@ jobs:
   model-ci:
     name: Model CI
     uses: ./.github/workflows/self-scheduled.yml
+    needs: get_modified_models
     with:
       job: run_models_gpu
       slack_report_channel: "#transformers-ci-dummy"

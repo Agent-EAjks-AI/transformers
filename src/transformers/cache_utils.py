@@ -352,7 +352,7 @@ class StaticLayer(CacheLayerMixin):
         return self.max_cache_len
 
 
-class SlidingWindowLayer(StaticLayer):
+class StaticSlidingWindowLayer(StaticLayer):
     """
     A static cache layer that stores the key and value states as static tensors of shape
     `[batch_size, num_heads, min(max_cache_len, sliding_window), head_dim]`. It lazily allocates its full backing
@@ -446,9 +446,9 @@ class SlidingWindowLayer(StaticLayer):
         return self.cumulative_length
 
 
-class ChunkedSlidingLayer(SlidingWindowLayer):
+class StaticChunkedLayer(StaticSlidingWindowLayer):
     """
-    An extended SlidingWindowLayer that supports prefill chunking, originally implemented for Llama 4.
+    An extended StaticSlidingWindowLayer that supports prefill chunking, originally implemented for Llama 4.
     """
 
     def update(
@@ -1139,9 +1139,9 @@ class StaticCache(Cache):
         layers = []
         for layer_type in layer_types:
             if layer_type == "sliding_attention":
-                layer = SlidingWindowLayer(max_cache_len=max_cache_len, sliding_window=config.sliding_window)
+                layer = StaticSlidingWindowLayer(max_cache_len=max_cache_len, sliding_window=config.sliding_window)
             elif layer_type == "chunked_attention":
-                layer = ChunkedSlidingLayer(max_cache_len=max_cache_len, sliding_window=config.attention_chunk_size)
+                layer = StaticChunkedLayer(max_cache_len=max_cache_len, sliding_window=config.attention_chunk_size)
             else:
                 layer = StaticLayer(max_cache_len=max_cache_len)
             layers.append(layer)

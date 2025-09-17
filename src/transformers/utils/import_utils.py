@@ -1549,6 +1549,7 @@ def is_matplotlib_available() -> Union[tuple[bool, str], bool]:
 def is_mistral_common_available() -> Union[tuple[bool, str], bool]:
     return _mistral_common_available
 
+
 def is_jmespath_available() -> Union[tuple[bool, str], bool]:
     return _jmespath_available
 

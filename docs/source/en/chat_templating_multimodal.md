@@ -18,7 +18,6 @@ rendered properly in your Markdown viewer.
 
 Multimodal chat models accept inputs like images, audio or video, in addition to text. The `content` key in a multimodal chat history is a list containing multiple items of different types. This is unlike text-only chat models whose `content` key is a single string.
 
-
 In the same way the [Tokenizer](./fast_tokenizer) class handles chat templates and tokenization for text-only models, 
 the [Processor](./processors) class handles preprocessing, tokenization and chat templates for multimodal models. Their [`~ProcessorMixin.apply_chat_template`] methods are almost identical.
 
@@ -113,6 +112,9 @@ print(processor.decode(out[0]))
 
 The decoded output contains the full conversation so far, including the user message and the placeholder tokens that contain the image information. You may need to trim the previous conversation from the output before displaying it to the user.
 
+## Response parsing
+
+TODO section on response parsing with a processor here
 
 ## Video inputs
 

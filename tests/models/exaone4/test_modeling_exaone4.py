@@ -100,6 +100,9 @@ class Exaone4ModelTest(CausalLMModelTest, unittest.TestCase):
 class Exaone4IntegrationTest(unittest.TestCase):
     TEST_MODEL_ID = "LGAI-EXAONE/EXAONE-4.0-32B"
 
+    def setUp(self):
+        cleanup(torch_device, gc_collect=True)
+
     def tearDown(self):
         # TODO (joao): automatic compilation, i.e. compilation when `cache_implementation="static"` is used, leaves
         # some memory allocated in the cache, which means some object is not being released properly. This causes some

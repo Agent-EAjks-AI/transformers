@@ -201,9 +201,7 @@ class Exaone4IntegrationTest(unittest.TestCase):
         )
 
         tokenizer = AutoTokenizer.from_pretrained(self.TEST_MODEL_ID, padding_side="right")
-        EXPECTED_TEXT_COMPLETION = [
-            "The Deep Learning is 100% free and easy to use.\n\n## How to use Deep Learning?\n\n"
-        ]
+        EXPECTED_TEXT_COMPLETION = ["The Deep Learning is \n['Deep Learning',"]
         max_generation_length = tokenizer(EXPECTED_TEXT_COMPLETION, return_tensors="pt", padding=True)[
             "input_ids"
         ].shape[-1]

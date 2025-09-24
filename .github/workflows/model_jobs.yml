@@ -107,7 +107,7 @@ jobs:
 
       - name: Install "huggingface_hub==1.0.0.rc0"
         working-directory: /transformers
-        run: python3 -m pip install "huggingface_hub==1.0.0.rc0"
+        run: python3 -m pip install "huggingface_hub==1.0.0.rc1"
 
       - name: Show installed libraries and their versions
         working-directory: /transformers

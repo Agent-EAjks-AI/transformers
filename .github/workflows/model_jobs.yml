@@ -105,6 +105,10 @@ jobs:
         run: |
           python3 utils/print_env.py
 
+      - name: Install "huggingface_hub==1.0.0.rc0"
+        working-directory: /transformers
+        run: python3 -m pip install "huggingface_hub==1.0.0.rc0"
+
       - name: Show installed libraries and their versions
         working-directory: /transformers
         run: pip freeze

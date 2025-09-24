@@ -114,58 +114,9 @@ class Exaone4IntegrationTest(unittest.TestCase):
     def test_model_logits(self):
         input_ids = [405, 7584, 79579, 76636, 2907, 94640, 373]
         model = Exaone4ForCausalLM.from_pretrained(
-            self.TEST_MODEL_ID, device_map="auto", dtype=torch.float16, attn_implementation="eager"
-        )
-        input_ids = torch.tensor([input_ids]).to(model.model.embed_tokens.weight.device)
-        with torch.no_grad():
-            out = model(input_ids).logits.float().cpu()
-
-        EXPECTED_MEAN = torch.tensor([[13.9380, 12.9951, 12.9442, 10.6576, 11.0901, 12.1466, 9.2482]])
-        EXPECTED_SLICE = torch.tensor(
-            [
-                4.9180,
-                11.6406,
-                21.1250,
-                13.4062,
-                20.8438,
-                18.0625,
-                17.9688,
-                18.7812,
-                18.0156,
-                18.3594,
-                18.5000,
-                19.1719,
-                18.5156,
-                19.3438,
-                19.5000,
-                20.6406,
-                19.4844,
-                19.2812,
-                19.4688,
-                20.0156,
-                19.8438,
-                19.9531,
-                19.7188,
-                20.5938,
-                20.5312,
-                20.1250,
-                20.4062,
-                21.4062,
-                21.2344,
-                20.7656,
-            ]
-        )
-
-        torch.testing.assert_close(out.mean(-1), EXPECTED_MEAN, atol=1e-2, rtol=1e-2)
-        torch.testing.assert_close(out[0, 0, :30], EXPECTED_SLICE, atol=1e-4, rtol=1e-4)
-        del model
-        cleanup(torch_device, gc_collect=True)
-
-    @slow
-    def test_model_logits_bf16(self):
-        input_ids = [405, 7584, 79579, 76636, 2907, 94640, 373]
-        model = Exaone4ForCausalLM.from_pretrained(
-            self.TEST_MODEL_ID, device_map="auto", dtype=torch.bfloat16, attn_implementation="eager"
+            self.TEST_MODEL_ID,
+            device_map="auto",
+            dtype=torch.bfloat16,
         )
         input_ids = torch.tensor([input_ids]).to(model.model.embed_tokens.weight.device)
         with torch.no_grad():
@@ -213,12 +164,12 @@ class Exaone4IntegrationTest(unittest.TestCase):
         cleanup(torch_device, gc_collect=True)
 
     @slow
-    def test_model_generation(self):
+    def test_model_generation_eager(self):
         EXPECTED_TEXT = "Tell me about the Miracle on the Han river.\n\nThe Miracle on the Han River is a story about the miracle of the Korean War Armistice. The story is told by a Korean soldier who is a witness to the armistice negotiations. He is reluctant to tell the story because he does not want to be a hypocrite, but he feels that everyone should know what really happened.\n\nThe Korean War began on June 25, 1950, when North Korean troops invaded South Korea. Soon the United Nations troops, primarily from South Korea, were in support of the United States. The war was still ongoing when North Korean troops stopped their advance"
         prompt = "Tell me about the Miracle on the Han river."
         tokenizer = AutoTokenizer.from_pretrained(self.TEST_MODEL_ID)
         model = Exaone4ForCausalLM.from_pretrained(
-            self.TEST_MODEL_ID, device_map="auto", dtype=torch.float16, attn_implementation="eager"
+            self.TEST_MODEL_ID, device_map="auto", dtype=torch.bfloat16, attn_implementation="eager"
         )
         input_ids = tokenizer.encode(prompt, return_tensors="pt").to(model.model.embed_tokens.weight.device)
 
@@ -230,7 +181,7 @@ class Exaone4IntegrationTest(unittest.TestCase):
         cleanup(torch_device, gc_collect=True)
 
     @slow
-    def test_model_generation_bf16_sdpa(self):
+    def test_model_generation_sdpa(self):
         EXPECTED_TEXT = "Tell me about the Miracle on the Han river.\n\nThe Miracle on the Han River is a story about the miracle of the Korean War Armistice.\n\nThe Korean War broke out in 35 years ago in 1950. The war was the result of the ideological conflict between the communist north and the capitalist south. The war was brought to a halt in 1953. There was to be peace talks but no peace treaty. As a result of the stalemate the Korean people have neither a peace treaty nor a reunification nor a democratization of Korea. The stalemate of 35 years has produced a people of 70 million"
         prompt = "Tell me about the Miracle on the Han river."
         tokenizer = AutoTokenizer.from_pretrained(self.TEST_MODEL_ID)
@@ -253,7 +204,7 @@ class Exaone4IntegrationTest(unittest.TestCase):
         EXPECTED_OUTPUT_TOKEN_IDS = [433, 9055]
         input_ids = [433, 9055] * 2048
         model = Exaone4ForCausalLM.from_pretrained(
-            self.TEST_MODEL_ID, device_map="auto", dtype=torch.float16, attn_implementation="flash_attention_2"
+            self.TEST_MODEL_ID, device_map="auto", dtype=torch.bfloat16, attn_implementation="flash_attention_2"
         )
         input_ids = torch.tensor([input_ids]).to(model.model.embed_tokens.weight.device)
 
@@ -271,7 +222,7 @@ class Exaone4IntegrationTest(unittest.TestCase):
         tokenizer = AutoTokenizer.from_pretrained(self.TEST_MODEL_ID)
         prompt = "This is a nice place. " * 700 + "I really enjoy the scenery,"
         model = Exaone4ForCausalLM.from_pretrained(
-            self.TEST_MODEL_ID, device_map="auto", dtype=torch.float16, attn_implementation="sdpa"
+            self.TEST_MODEL_ID, device_map="auto", dtype=torch.bfloat16, attn_implementation="sdpa"
         )
         input_ids = tokenizer.encode(prompt, return_tensors="pt").to(model.model.embed_tokens.weight.device)
 

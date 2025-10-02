@@ -352,7 +352,9 @@ class TimedModel:
     def timeout_reached(self):
         if self.timeout_seconds > 0:
             self.delete_model()
-            logger.info(f"{self._name_or_path} was removed from memory after {self.timeout_seconds} seconds of inactivity")
+            logger.info(
+                f"{self._name_or_path} was removed from memory after {self.timeout_seconds} seconds of inactivity"
+            )
 
     def is_deleted(self):
         """Check if the instances have been deleted."""
@@ -418,9 +420,13 @@ class ServeArguments:
     # Serving settings
     host: str = field(default="localhost", metadata={"help": "Interface the server will listen to."})
     port: int = field(default=8000, metadata={"help": "Port the server will listen to."})
-    model_timeout: int = field(
-        default=300,
-        metadata={"help": "Time in seconds after which a model will be removed from memory."},
+    model_timeout: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": "Time in seconds after which a model will be removed from memory; defaults to 300 unless "
+            "`force_model` is set, in which case the model will not be removed from memory unless a value"
+            "is specified here."
+        },
     )
 
     # Other settings
@@ -530,6 +536,9 @@ class ServeCommand(BaseTransformersCLICommand):
         self.last_messages = None
         self.last_kv_cache = None
         self.last_model = None
+
+        if self.args.model_timeout is None:
+            self.args.model_timeout = -1 if self.args.force_model else 300
 
         if self.args.force_model:
             model_id_and_revision = self.process_model_name(self.args.force_model)

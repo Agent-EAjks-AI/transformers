@@ -1203,17 +1203,17 @@ class ServeCommand(BaseTransformersCLICommand):
             finally:
                 thread.join()
 
-            return (
-                StreamingResponse(
-                    stream_chat_completion(generation_streamer, request_id), media_type="text/event-stream"
-                )
-                if req.get("stream")
-                else self.unstream_response(
-                    stream_chat_completion(generation_streamer, request_id, compile_to_sse=False),
-                    request_id=request_id,
-                    model=req.get("model"),
-                )
+        return (
+            StreamingResponse(
+                stream_chat_completion(generation_streamer, request_id), media_type="text/event-stream"
             )
+            if req.get("stream")
+            else self.unstream_response(
+                stream_chat_completion(generation_streamer, request_id, compile_to_sse=False),
+                request_id=request_id,
+                model=req.get("model"),
+            )
+        )
 
     async def unpack_generator(self, agen):
         return [x async for x in agen]

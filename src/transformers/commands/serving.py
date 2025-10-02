@@ -1204,9 +1204,7 @@ class ServeCommand(BaseTransformersCLICommand):
                 thread.join()
 
         return (
-            StreamingResponse(
-                stream_chat_completion(generation_streamer, request_id), media_type="text/event-stream"
-            )
+            StreamingResponse(stream_chat_completion(generation_streamer, request_id), media_type="text/event-stream")
             if req.get("stream")
             else self.unstream_response(
                 stream_chat_completion(generation_streamer, request_id, compile_to_sse=False),
@@ -1259,7 +1257,10 @@ class ServeCommand(BaseTransformersCLICommand):
             usage=usage,
         )
 
-        return JSONResponse(chat_completion_result.model_dump(exclude_none=True), media_type="application/json")
+        result = chat_completion_result.model_dump(exclude_none=True)
+        print(result)
+
+        return JSONResponse(result, media_type="application/json")
 
     def generate_response(self, req: dict) -> Generator[str, None, None]:
         """

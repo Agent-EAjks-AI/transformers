@@ -71,11 +71,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: "0"
-          ref: "refs/pull/${{needs.get-pr-number.outputs.PR_NUMBER}}/merge"
+          ref: "refs/pull/${{ needs.get-pr-number.outputs.PR_NUMBER }}/merge"
 
       - name: Verify merge commit SHA
         env:
-          VERIFIED_PR_MERGE_SHA: ${{ needs.get-pr-info.outputs.PR_MERGE_SHA }}
+          VERIFIED_PR_MERGE_SHA: ${{ needs.check-timestamps.outputs.PR_MERGE_SHA }}
         run: |
             PR_MERGE_SHA=$(git log -1 --format=%H)
             if [ $PR_MERGE_SHA != $VERIFIED_PR_MERGE_SHA ]; then
@@ -145,213 +145,40 @@ jobs:
             repos/${{ github.repository }}/statuses/${{ needs.get-sha.outputs.PR_HEAD_SHA }} \
             -f "target_url=$GITHUB_RUN_URL" -f "state=pending" -f "description=Slow CI job" -f "context=pytest/custom-tests"
 
-  run_models_gpu:
-    name: Run all tests for the model
+  model-ci:
+    name: Model CI
     if: ${{ needs.get-tests.outputs.models != '[]' }}
+    uses: ./.github/workflows/self-scheduled.yml
     needs: create_run
-    strategy:
-      fail-fast: false
-      matrix:
-        folders: ${{ fromJson(needs.get-tests.outputs.models) }}
-        machine_type: [aws-g5-4xlarge-cache, aws-g5-12xlarge-cache]
-    runs-on:
-       group: '${{ matrix.machine_type }}'
-    container:
-      image: huggingface/transformers-all-latest-gpu
-      options: --gpus all --shm-size "16gb" --ipc host -v /mnt/cache/.cache/huggingface:/mnt/cache/
-    steps:
-      - name: Echo input and matrix info
-        shell: bash
-        run: |
-          echo "${{ matrix.folders }}"
+    with:
+      job: run_models_gpu
+      slack_report_channel: "#transformers-ci-pr"
+      docker: huggingface/transformers-all-latest-gpu
+      ci_event: pr
+      report_repo_id: hf-internal-testing/transformers_ci_pr
+      commit_sha: ${{ needs.check-timestamps.outputs.PR_MERGE_SHA }}
+      models: ${{ needs.get-tests.outputs.models }}
+    secrets: inherit
 
-      - name: Echo folder ${{ matrix.folders }}
-        shell: bash
-        # For folders like `models/bert`, set an env. var. (`matrix_folders`) to `models_bert`, which will be used to
-        # set the artifact folder names (because the character `/` is not allowed).
-        run: |
-          echo "${{ matrix.folders }}"
-          matrix_folders=${{ matrix.folders }}
-          matrix_folders=${matrix_folders/'models/'/'models_'}
-          echo "$matrix_folders"
-          echo "matrix_folders=$matrix_folders" >> $GITHUB_ENV
-
-      - name: Checkout to PR merge commit
-        working-directory: /transformers
-        run: |
-          git fetch origin refs/pull/${{ needs.get-pr-number.outputs.PR_NUMBER }}/merge:refs/remotes/pull/${{ needs.get-pr-number.outputs.PR_NUMBER }}/merge
-          git checkout refs/remotes/pull/${{ needs.get-pr-number.outputs.PR_NUMBER }}/merge
-          git log -1 --format=%H
-
-      - name: Verify merge commit SHA
-        env:
-          VERIFIED_PR_MERGE_SHA: ${{ needs.get-sha.outputs.PR_MERGE_SHA }}
-        working-directory: /transformers
-        run: |
-          PR_MERGE_SHA=$(git log -1 --format=%H)
-          if [ $PR_MERGE_SHA != $VERIFIED_PR_MERGE_SHA ]; then
-            echo "The merged commit SHA is not the same as the verified one! Security issue detected, abort the workflow!";
-            exit -1;
-          fi
-
-      - name: Reinstall transformers in edit mode (remove the one installed during docker image build)
-        working-directory: /transformers
-        run: python3 -m pip uninstall -y transformers && python3 -m pip install -e .
-
-      - name: NVIDIA-SMI
-        run: |
-          nvidia-smi
-
-      - name: Set `machine_type` for report and artifact names
-        working-directory: /transformers
-        shell: bash
-        run: |
-          echo "${{ matrix.machine_type }}"
-          if [ "${{ matrix.machine_type }}" = "aws-g5-4xlarge-cache" ]; then
-            machine_type=single-gpu
-          elif [ "${{ matrix.machine_type }}" = "aws-g5-12xlarge-cache" ]; then
-            machine_type=multi-gpu
-          else
-            machine_type=${{ matrix.machine_type }}
-          fi
-          echo "$machine_type"
-          echo "machine_type=$machine_type" >> $GITHUB_ENV
-
-      - name: Environment
-        working-directory: /transformers
-        run: |
-          python3 utils/print_env.py
-
-      - name: Show installed libraries and their versions
-        working-directory: /transformers
-        run: pip freeze
-
-      - name: Run all tests on GPU
-        working-directory: /transformers
-        run: |
-          export CUDA_VISIBLE_DEVICES="$(python3 utils/set_cuda_devices_for_ci.py --test_folder ${{ matrix.folders }})"
-          echo $CUDA_VISIBLE_DEVICES
-          python3 -m pytest -v -rsfE --make-reports=${{ env.machine_type }}_run_models_gpu_${{ matrix.folders }}_test_reports tests/${{ matrix.folders }}
-
-      - name: Failure short reports
-        if: ${{ failure() }}
-        continue-on-error: true
-        run: cat /transformers/reports/${{ env.machine_type }}_run_models_gpu_${{ matrix.folders }}_test_reports/failures_short.txt
-
-      - name: Make sure report directory exists
-        shell: bash
-        run: |
-          mkdir -p /transformers/reports/${{ env.machine_type }}_run_models_gpu_${{ matrix.folders }}_test_reports
-          echo "hello" > /transformers/reports/${{ env.machine_type }}_run_models_gpu_${{ matrix.folders }}_test_reports/hello.txt
-          echo "${{ env.machine_type }}_run_models_gpu_${{ matrix.folders }}_test_reports"
-
-      - name: "Test suite reports artifacts: ${{ env.machine_type }}_run_models_gpu_${{ env.matrix_folders }}_test_reports"
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.machine_type }}_run_models_gpu_${{ env.matrix_folders }}_test_reports
-          path: /transformers/reports/${{ env.machine_type }}_run_models_gpu_${{ matrix.folders }}_test_reports
-
-  run_quantization_torch_gpu:
-    name: Run all tests for a quantization
+  quantization-ci:
+    name: Quantization CI
     if: ${{ needs.get-tests.outputs.quantizations != '[]' }}
+    uses: ./.github/workflows/self-scheduled.yml
     needs: create_run
-    strategy:
-      fail-fast: false
-      matrix:
-        folders: ${{ fromJson(needs.get-tests.outputs.quantizations) }}
-        machine_type: [aws-g5-4xlarge-cache, aws-g5-12xlarge-cache]
-    runs-on:
-      group: '${{ matrix.machine_type }}'
-    container:
-      image: huggingface/transformers-quantization-latest-gpu
-      options: --gpus all --shm-size "16gb" --ipc host -v /mnt/cache/.cache/huggingface:/mnt/cache/
-    steps:
-      - name: Echo folder ${{ matrix.folders }}
-        shell: bash
-        run: |
-          echo "${{ matrix.folders }}"
-          matrix_folders=${{ matrix.folders }}
-          matrix_folders=${matrix_folders/'quantization/'/'quantization_'}
-          echo "$matrix_folders"
-          echo "matrix_folders=$matrix_folders" >> $GITHUB_ENV
-
-      - name: Checkout to PR merge commit
-        working-directory: /transformers
-        run: |
-          git fetch origin refs/pull/${{ needs.get-pr-number.outputs.PR_NUMBER }}/merge:refs/remotes/pull/${{ needs.get-pr-number.outputs.PR_NUMBER }}/merge
-          git checkout refs/remotes/pull/${{ needs.get-pr-number.outputs.PR_NUMBER }}/merge
-          git log -1 --format=%H
-
-      - name: Verify merge commit SHA
-        env:
-          VERIFIED_PR_MERGE_SHA: ${{ needs.get-sha.outputs.PR_MERGE_SHA }}
-        working-directory: /transformers
-        run: |
-          PR_MERGE_SHA=$(git log -1 --format=%H)
-          if [ $PR_MERGE_SHA != $VERIFIED_PR_MERGE_SHA ]; then
-            echo "The merged commit SHA is not the same as the verified one! Security issue detected, abort the workflow!";
-            exit -1;
-          fi
-
-      - name: Reinstall transformers in edit mode (remove the one installed during docker image build)
-        working-directory: /transformers
-        run: python3 -m pip uninstall -y transformers && python3 -m pip install -e .
-      - name: NVIDIA-SMI
-        run: |
-          nvidia-smi
-
-      - name: Set `machine_type` for report and artifact names
-        working-directory: /transformers
-        shell: bash
-        run: |
-          echo "${{ matrix.machine_type }}"
-          if [ "${{ matrix.machine_type }}" = "aws-g5-4xlarge-cache" ]; then
-            machine_type=single-gpu
-          elif [ "${{ matrix.machine_type }}" = "aws-g5-12xlarge-cache" ]; then
-            machine_type=multi-gpu
-          else
-            machine_type=${{ matrix.machine_type }}
-          fi
-          echo "$machine_type"
-          echo "machine_type=$machine_type" >> $GITHUB_ENV
-
-      - name: Environment
-        working-directory: /transformers
-        run: |
-          python3 utils/print_env.py
-
-      - name: Show installed libraries and their versions
-        working-directory: /transformers
-        run: pip freeze
-
-      - name: Run quantization tests on GPU
-        working-directory: /transformers
-        run: |
-          python3 -m pytest -v --make-reports=${{ env.machine_type }}_run_quantization_torch_gpu_${{ matrix.folders }}_test_reports tests/${{ matrix.folders }}
-
-      - name: Failure short reports
-        if: ${{ failure() }}
-        continue-on-error: true
-        run: cat /transformers/reports/${{ env.machine_type }}_run_quantization_torch_gpu_${{ matrix.folders }}_test_reports/failures_short.txt
-
-      - name: Make sure report directory exists
-        shell: bash
-        run: |
-          mkdir -p /transformers/reports/${{ env.machine_type }}_run_quantization_gpu_${{ matrix.folders }}_test_reports
-          echo "hello" > /transformers/reports/${{ env.machine_type }}_run_quantization_gpu_${{ matrix.folders }}_test_reports/hello.txt
-          echo "${{ env.machine_type }}_run_quantization_gpu_${{ matrix.folders }}_test_reports"
-
-      - name: "Test suite reports artifacts: ${{ env.machine_type }}_run_quantization_torch_gpu_${{ env.matrix_folders }}_test_reports"
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.machine_type }}_run_quantization_torch_gpu_${{ env.matrix_folders }}_test_reports
-          path: /transformers/reports/${{ env.machine_type }}_run_quantization_torch_gpu_${{ matrix.folders }}_test_reports
+    with:
+      job: run_quantization_torch_gpu
+      slack_report_channel: "#transformers-ci-pr"
+      docker: huggingface/transformers-quantization-latest-gpu
+      ci_event: PR
+      report_repo_id: hf-internal-testing/transformers_pr_ci
+      commit_sha: ${{ needs.check-timestamps.outputs.PR_MERGE_SHA }}
+      # TODO: ???
+      models: ${{ needs.get-tests.outputs.quantizations }}
+    secrets: inherit
 
   update_run_status:
     name: Update Check Run Status
-    needs: [run_models_gpu, run_quantization_torch_gpu]
+    needs: [model-ci, quantization-ci]
     permissions:
       statuses: write
     if: ${{ always() && needs.create_run.result == 'success' }}

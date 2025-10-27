@@ -23,62 +23,34 @@ env:
   TF_FORCE_GPU_ALLOW_GROWTH: true
   CUDA_VISIBLE_DEVICES: 0,1
 
+
 jobs:
   get-pr-number:
-    runs-on: ubuntu-22.04
     name: Get PR number
-    # For security: only allow team members to run
     if: ${{ github.event.issue.state == 'open' && contains(fromJSON('["ydshieh", "ArthurZucker", "zucchini-nlp", "molbap", "gante", "LysandreJik", "Cyrilvallez", "Rocketknight1", "SunMarc", "eustlb", "MekkCyber", "vasqu", "ivarflakstad", "stevhliu", "ebezzam", "remi-or", "itazap"]'), github.actor) && (startsWith(github.event.comment.body, 'run-slow') || startsWith(github.event.comment.body, 'run slow') || startsWith(github.event.comment.body, 'run_slow')) }}
-    outputs:
-      PR_NUMBER: ${{ steps.set_pr_number.outputs.PR_NUMBER }}
-    steps:
-      - name: Get PR number
-        shell: bash
-        run: |
-          if [[ "${{ github.event.issue.number }}" != "" && "${{ github.event.issue.pull_request }}" != "" ]]; then
-            echo "PR_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_ENV
-          else
-            echo "PR_NUMBER=" >> $GITHUB_ENV
-          fi
+    uses: ./.github/workflows/get-pr-number.yml
 
-      - name: Check PR number
-        shell: bash
-        run: |
-          echo "${{ env.PR_NUMBER }}"
-
-      - name: Set PR number
-        id: set_pr_number
-        run: echo "PR_NUMBER=${{ env.PR_NUMBER }}" >> "$GITHUB_OUTPUT"
-
-  get-sha:
-    runs-on: ubuntu-22.04
+  get-pr-info:
+    name: Get PR commit SHA
     needs: get-pr-number
     if: ${{ needs.get-pr-number.outputs.PR_NUMBER != ''}}
-    outputs:
-      PR_HEAD_SHA: ${{ steps.get_sha.outputs.PR_HEAD_SHA }}
-      PR_MERGE_SHA: ${{ steps.get_sha.outputs.PR_MERGE_SHA }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: "0"
-          ref: "refs/pull/${{needs.get-pr-number.outputs.PR_NUMBER}}/merge"
+    uses: ./.github/workflows/get-pr-info.yml
+    with:
+      pr_number: ${{ needs.get-pr-number.outputs.PR_NUMBER }}
 
-      - name: Get SHA (and verify timestamps against the issue comment date)
-        id: get_sha
+  check-timestamps:
+    runs-on: ubuntu-22.04
+    needs: get-pr-info
+    outputs:
+      PR_HEAD_SHA: ${{ needs.get-pr-info.outputs.PR_HEAD_SHA }}
+      PR_MERGE_SHA: ${{ needs.get-pr-info.outputs.PR_MERGE_COMMIT_SHA }}
+    steps:
+      - name: Verify the event timestamp against the issue comment date (timestamp)
         env:
           PR_NUMBER: ${{ needs.get-pr-number.outputs.PR_NUMBER }}
           COMMENT_DATE: ${{ github.event.comment.created_at }}
+          PR_MERGE_COMMIT_TIMESTAMP: ${{ needs.get-pr-info.outputs.PR_MERGE_COMMIT_TIMESTAMP }}
         run: |
-            git fetch origin refs/pull/$PR_NUMBER/head:refs/remotes/pull/$PR_NUMBER/head
-            git checkout refs/remotes/pull/$PR_NUMBER/head
-            echo "PR_HEAD_SHA: $(git log -1 --format=%H)"
-            echo "PR_HEAD_SHA=$(git log -1 --format=%H)" >> "$GITHUB_OUTPUT"
-            git fetch origin refs/pull/$PR_NUMBER/merge:refs/remotes/pull/$PR_NUMBER/merge
-            git checkout refs/remotes/pull/$PR_NUMBER/merge
-            echo "PR_MERGE_SHA: $(git log -1 --format=%H)"
-            echo "PR_MERGE_SHA=$(git log -1 --format=%H)" >> "$GITHUB_OUTPUT"
-            PR_MERGE_COMMIT_TIMESTAMP=$(git log -1 --date=unix --format=%cd)
-            echo "PR_MERGE_COMMIT_TIMESTAMP: $PR_MERGE_COMMIT_TIMESTAMP"
             COMMENT_TIMESTAMP=$(date -d "${COMMENT_DATE}" +"%s")
             echo "COMMENT_DATE: $COMMENT_DATE"
             echo "COMMENT_TIMESTAMP: $COMMENT_TIMESTAMP"
@@ -87,13 +59,11 @@ jobs:
               exit -1;
             fi
 
-  # use a python script to handle this complex logic
-  # case 1: `run-slow` (auto. infer with limited number of models, but in particular, new model)
-  # case 2: `run-slow model_1, model_2`
+  # use a python script to handle this complex logic.
+  # TODO: Avoid checkout and reuse `get-pr-info.yml`
   get-tests:
     runs-on: ubuntu-22.04
-    needs: [get-pr-number, get-sha]
-    if: ${{ needs.get-pr-number.outputs.PR_NUMBER != ''}}
+    needs: check-timestamps
     outputs:
       models: ${{ steps.models_to_run.outputs.models }}
       quantizations: ${{ steps.models_to_run.outputs.quantizations }}
@@ -105,7 +75,7 @@ jobs:
 
       - name: Verify merge commit SHA
         env:
-          VERIFIED_PR_MERGE_SHA: ${{ needs.get-sha.outputs.PR_MERGE_SHA }}
+          VERIFIED_PR_MERGE_SHA: ${{ needs.get-pr-info.outputs.PR_MERGE_SHA }}
         run: |
             PR_MERGE_SHA=$(git log -1 --format=%H)
             if [ $PR_MERGE_SHA != $VERIFIED_PR_MERGE_SHA ]; then
@@ -135,7 +105,7 @@ jobs:
   reply_to_comment:
     name: Reply to the comment
     if: ${{ needs.get-tests.outputs.models != '[]'  || needs.get-tests.outputs.quantizations != '[]' }}
-    needs: [get-pr-number, get-tests]
+    needs: get-tests
     permissions:
       pull-requests: write
     runs-on: ubuntu-22.04
@@ -155,8 +125,7 @@ jobs:
 
   create_run:
     name: Create run
-    if: ${{ needs.get-tests.outputs.models != '[]' || needs.get-tests.outputs.quantizations != '[]' }}
-    needs: [get-sha, get-tests, reply_to_comment]
+    needs: reply_to_comment
     permissions:
       statuses: write
     runs-on: ubuntu-22.04
@@ -179,7 +148,7 @@ jobs:
   run_models_gpu:
     name: Run all tests for the model
     if: ${{ needs.get-tests.outputs.models != '[]' }}
-    needs: [get-pr-number, get-sha, get-tests, create_run]
+    needs: create_run
     strategy:
       fail-fast: false
       matrix:
@@ -286,7 +255,7 @@ jobs:
   run_quantization_torch_gpu:
     name: Run all tests for a quantization
     if: ${{ needs.get-tests.outputs.quantizations != '[]' }}
-    needs: [get-pr-number, get-sha, get-tests, create_run]
+    needs: create_run
     strategy:
       fail-fast: false
       matrix:
@@ -382,7 +351,7 @@ jobs:
 
   update_run_status:
     name: Update Check Run Status
-    needs: [get-sha, create_run, run_models_gpu, run_quantization_torch_gpu]
+    needs: [run_models_gpu, run_quantization_torch_gpu]
     permissions:
       statuses: write
     if: ${{ always() && needs.create_run.result == 'success' }}

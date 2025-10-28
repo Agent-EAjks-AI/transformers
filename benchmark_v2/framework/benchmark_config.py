@@ -23,6 +23,7 @@ class BenchmarkConfig:
         warmup_iterations: int = 5,
         measurement_iterations: int = 20,
         gpu_monitoring: bool = True,  # NOTE: you may want to disable this at times as we have obsvered it could heavily slow down benchmarks on AMD
+        continuous_batching: bool = True,
         batch_size: int = 1,
         sequence_length: int = 128,
         num_tokens_to_generate: int = 128,
@@ -38,6 +39,7 @@ class BenchmarkConfig:
         self.warmup_iterations = warmup_iterations
         self.measurement_iterations = measurement_iterations
         self.gpu_monitoring = gpu_monitoring
+        self.continuous_batching = continuous_batching
         # Input parameters
         self.batch_size = batch_size
         self.sequence_length = sequence_length
@@ -137,6 +139,7 @@ def cross_generate_configs(
     sequence_length: int = 128,
     num_tokens_to_generate: int = 128,
     gpu_monitoring: bool = True,
+    continuous_batching: bool = True,
 ) -> list[BenchmarkConfig]:
     # Create kwargs common to all configs
     kwargs = {
@@ -146,6 +149,7 @@ def cross_generate_configs(
         "sequence_length": sequence_length,
         "num_tokens_to_generate": num_tokens_to_generate,
         "gpu_monitoring": gpu_monitoring,
+        "continuous_batching": continuous_batching,
     }
     # Cross-generate all combinations of attn_implementation, compiled_mode, and kernelized
     configs = []
@@ -170,6 +174,7 @@ def generate_all_configs(
     sequence_length: int = 128,
     num_tokens_to_generate: int = 128,
     gpu_monitoring: bool = True,
+    continuous_batching: bool = True,
 ) -> list[BenchmarkConfig]:
     all_attn_implementations = [
         ("flash_attention_2", None),
@@ -188,6 +193,7 @@ def generate_all_configs(
         sequence_length=sequence_length,
         num_tokens_to_generate=num_tokens_to_generate,
         gpu_monitoring=gpu_monitoring,
+        continuous_batching=continuous_batching,
     )
 
 
@@ -197,6 +203,7 @@ def generate_main_configs(
     batch_size: int = 1,
     sequence_length: int = 128,
     num_tokens_to_generate: int = 128,
+    continuous_batching: bool = True,
 ) -> list[BenchmarkConfig]:
     # Create kwargs common to all configs
     kwargs = {
@@ -205,6 +212,7 @@ def generate_main_configs(
         "batch_size": batch_size,
         "sequence_length": sequence_length,
         "num_tokens_to_generate": num_tokens_to_generate,
+        "continuous_batching": continuous_batching,
     }
     return [  # TODO: test max-autotune instead of default
         BenchmarkConfig(attn_implementation="flex_attention", compile_mode="default", gpu_monitoring=False, **kwargs),

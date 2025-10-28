@@ -60,7 +60,7 @@ if __name__ == "__main__":
     d1.remove("models")
     d = d2 + d1
 
-    assert args.subdirs == ""
+    # assert args.subdirs == ""
     if args.subdirs != "":
         model_tests = ast.literal_eval(args.subdirs)
         d = sorted(filter(os.path.isdir, [x if x.startswith("models/") else f"models/{x}" for x in model_tests]))

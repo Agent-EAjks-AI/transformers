@@ -6,9 +6,16 @@ on:
       - created
     branches-ignore:
       - main
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.issue.number }}-${{ startsWith(github.event.comment.body, 'run-slow') || startsWith(github.event.comment.body, 'run slow') || startsWith(github.event.comment.body, 'run_slow') }}
-  cancel-in-progress: true
+  # TODO: remove
+  # run_slow_v2
+  pull_request:
+    types: [synchronize]
+
+
+# TODO: remove
+#concurrency:
+#  group: ${{ github.workflow }}-${{ github.event.issue.number }}-${{ startsWith(github.event.comment.body, 'run-slow') || startsWith(github.event.comment.body, 'run slow') || startsWith(github.event.comment.body, 'run_slow') }}
+#  cancel-in-progress: true
 permissions: read-all
 
 env:
@@ -27,7 +34,8 @@ env:
 jobs:
   get-pr-number:
     name: Get PR number
-    if: ${{ github.event.issue.state == 'open' && contains(fromJSON('["ydshieh", "ArthurZucker", "zucchini-nlp", "molbap", "gante", "LysandreJik", "Cyrilvallez", "Rocketknight1", "SunMarc", "eustlb", "MekkCyber", "vasqu", "ivarflakstad", "stevhliu", "ebezzam", "remi-or", "itazap"]'), github.actor) && (startsWith(github.event.comment.body, 'run-slow') || startsWith(github.event.comment.body, 'run slow') || startsWith(github.event.comment.body, 'run_slow')) }}
+    # TODO: remove
+    # if: ${{ github.event.issue.state == 'open' && contains(fromJSON('["ydshieh", "ArthurZucker", "zucchini-nlp", "molbap", "gante", "LysandreJik", "Cyrilvallez", "Rocketknight1", "SunMarc", "eustlb", "MekkCyber", "vasqu", "ivarflakstad", "stevhliu", "ebezzam", "remi-or", "itazap"]'), github.actor) && (startsWith(github.event.comment.body, 'run-slow') || startsWith(github.event.comment.body, 'run slow') || startsWith(github.event.comment.body, 'run_slow')) }}
     uses: ./.github/workflows/get-pr-number.yml
 
   get-pr-info:
@@ -49,14 +57,17 @@ jobs:
         env:
           COMMENT_DATE: ${{ github.event.comment.created_at }}
           PR_MERGE_COMMIT_TIMESTAMP: ${{ needs.get-pr-info.outputs.PR_MERGE_COMMIT_TIMESTAMP }}
+        # TODO: revert
         run: |
-            COMMENT_TIMESTAMP=$(date -d "${COMMENT_DATE}" +"%s")
-            echo "COMMENT_DATE: $COMMENT_DATE"
-            echo "COMMENT_TIMESTAMP: $COMMENT_TIMESTAMP"
-            if [ $COMMENT_TIMESTAMP -le $PR_MERGE_COMMIT_TIMESTAMP ]; then
-              echo "Last commit on the pull request is newer than the issue comment triggering this run! Abort!";
-              exit -1;
-            fi
+            echo "bon"
+#        run: |
+#            COMMENT_TIMESTAMP=$(date -d "${COMMENT_DATE}" +"%s")
+#            echo "COMMENT_DATE: $COMMENT_DATE"
+#            echo "COMMENT_TIMESTAMP: $COMMENT_TIMESTAMP"
+#            if [ $COMMENT_TIMESTAMP -le $PR_MERGE_COMMIT_TIMESTAMP ]; then
+#              echo "Last commit on the pull request is newer than the issue comment triggering this run! Abort!";
+#              exit -1;
+#            fi
 
   # use a python script to handle this complex logic.
   # TODO: Avoid checkout and reuse `get-pr-info.yml`
@@ -83,8 +94,11 @@ jobs:
             fi
 
       - name: Get models to test
+        # TODO: revert
+#        env:
+#          PR_COMMENT: ${{ github.event.comment.body }}
         env:
-          PR_COMMENT: ${{ github.event.comment.body }}
+          PR_COMMENT: "run-slow: vit, clip"
         run: |
           python -m pip install GitPython
           python utils/pr_slow_ci_models.py --message "$PR_COMMENT" | tee output.txt

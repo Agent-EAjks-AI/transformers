@@ -40,7 +40,7 @@ import os
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--models",
+        "--subdirs",
         type=str,
         default="",
         help="the list of pre-computed model names.",
@@ -60,9 +60,9 @@ if __name__ == "__main__":
     d1.remove("models")
     d = d2 + d1
 
-    if args.models != "":
-        model_tests = ast.literal_eval(args.models)
-        d = sorted(filter(os.path.isdir, [f"models/{x}" for x in model_tests]))
+    if args.subdirs != "":
+        model_tests = ast.literal_eval(args.subdirs)
+        d = sorted(filter(os.path.isdir, [x if x.startswith("models/") else f"models/{x}" for x in model_tests]))
 
     num_jobs = len(d)
     num_jobs_per_splits = num_jobs // args.num_splits

@@ -63,6 +63,7 @@ jobs:
             echo "${{ needs.get-pr-info.outputs.PR_BASE_SHA }}"
             echo "${{ needs.get-pr-info.outputs.PR_HEAD_SHA }}"
             echo "${{ needs.get-pr-info.outputs.PR_MERGE_COMMIT_SHA }}"
+            echo "${{ needs.get-pr-info.outputs.PR_MERGE_COMMIT_BASE_SHA }}"
 #        run: |
 #            COMMENT_TIMESTAMP=$(date -d "${COMMENT_DATE}" +"%s")
 #            echo "COMMENT_DATE: $COMMENT_DATE"

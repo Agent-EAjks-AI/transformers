@@ -142,6 +142,10 @@ jobs:
               date: merge_commit.commit.committer.date
             });
 
+            console.log('PR Info:', {
+              pr_info: pr
+            });
+
       - name: Convert dates to timestamps
         id: get_timestamps
         run: |

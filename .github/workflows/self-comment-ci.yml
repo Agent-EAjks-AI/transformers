@@ -157,7 +157,7 @@ jobs:
       ci_event: pr
       report_repo_id: hf-internal-testing/transformers_pr_ci
       commit_sha: ${{ needs.check-timestamps.outputs.PR_MERGE_SHA }}
-      models: ${{ needs.get-tests.outputs.models }}
+      subdirs: ${{ needs.get-tests.outputs.models }}
     secrets: inherit
 
   quantization-ci:
@@ -172,8 +172,7 @@ jobs:
       ci_event: PR
       report_repo_id: hf-internal-testing/transformers_pr_ci
       commit_sha: ${{ needs.check-timestamps.outputs.PR_MERGE_SHA }}
-      # TODO: ???
-      models: ${{ needs.get-tests.outputs.quantizations }}
+      subdirs: ${{ needs.get-tests.outputs.quantizations }}
     secrets: inherit
 
   update_run_status:

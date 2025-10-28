@@ -60,6 +60,7 @@ if __name__ == "__main__":
     d1.remove("models")
     d = d2 + d1
 
+    assert args.subdirs == ""
     if args.subdirs != "":
         model_tests = ast.literal_eval(args.subdirs)
         d = sorted(filter(os.path.isdir, [x if x.startswith("models/") else f"models/{x}" for x in model_tests]))
@@ -73,5 +74,7 @@ if __name__ == "__main__":
         start = end
         end = start + num_jobs_per_splits + (1 if idx < num_jobs % args.num_splits else 0)
         model_splits.append(d[start:end])
+
+    model_splits = [["models/vit"], ["models/clip"]]
 
     print(model_splits)

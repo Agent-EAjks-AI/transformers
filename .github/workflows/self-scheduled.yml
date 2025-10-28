@@ -76,6 +76,7 @@ jobs:
       - name: Update clone
         working-directory: /transformers
         run: |
+          git fetch origin ${{ inputs.commit_sha || github.sha }}
           git fetch && git checkout ${{ inputs.commit_sha || github.sha }}
 
       - name: Cleanup
